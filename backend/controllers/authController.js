@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 
@@ -24,6 +25,12 @@ const generateRefreshToken = (user) => {
 // REGISTER
 exports.register = async (req, res) => {
   try {
+    // Validation check
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { username, email, password, role } = req.body;
 
     // Check if user already exists
@@ -36,7 +43,7 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await User.create({
+    await User.create({
       username,
       email,
       password: hashedPassword,
@@ -44,13 +51,7 @@ exports.register = async (req, res) => {
     });
 
     res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role
-      }
+      message: 'User registered successfully'
     });
 
   } catch (error) {
@@ -61,6 +62,12 @@ exports.register = async (req, res) => {
 // LOGIN
 exports.login = async (req, res) => {
   try {
+    // Validation check
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { email, password } = req.body;
 
     // Check if user exists
@@ -75,8 +82,7 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user);
+    // Generate refresh token only
     const refreshToken = generateRefreshToken(user);
 
     // Save refresh token to database
@@ -89,16 +95,10 @@ exports.login = async (req, res) => {
       expires_at: expiresAt
     });
 
+    // Send refresh token only (no user info, no access token)
     res.status(200).json({
       message: 'Login successful',
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role
-      }
+      refreshToken
     });
 
   } catch (error) {
@@ -106,7 +106,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// REFRESH TOKEN
+// REFRESH TOKEN - returns access token
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -136,11 +136,11 @@ exports.refreshToken = async (req, res) => {
     // Get user
     const user = await User.findByPk(decoded.id);
 
-    // Generate new access token
-    const newAccessToken = generateAccessToken(user);
+    // Generate new access token only
+    const accessToken = generateAccessToken(user);
 
     res.status(200).json({
-      accessToken: newAccessToken
+      accessToken
     });
 
   } catch (error) {
@@ -153,11 +153,15 @@ exports.logout = async (req, res) => {
   try {
     const { refreshToken } = req.body;
 
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token required' });
+    }
+
     // Delete refresh token from database
     await RefreshToken.destroy({ where: { token: refreshToken } });
 
     res.status(200).json({ message: 'Logged out successfully' });
-
+    
   } catch (error) {
     res.status(500).json({ message: 'Logout failed', error: error.message });
   }
