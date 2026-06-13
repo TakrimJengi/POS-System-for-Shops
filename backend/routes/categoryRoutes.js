@@ -15,6 +15,7 @@ const categoryValidation = [
 // Category routes (all protected - must be logged in)
 router.get('/', verifyToken, categoryController.getAllCategories);
 router.post('/', verifyToken, isAdmin, categoryValidation, categoryController.addCategory);
-
+router.put('/:id', verifyToken, isAdmin, categoryValidation, categoryController.updateCategory);
+router.delete('/:id', verifyToken, isAdmin, categoryController.deleteCategory);
 
 module.exports = router;
