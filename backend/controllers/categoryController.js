@@ -33,4 +33,46 @@ exports.addCategory = async (req, res) => {
       res.status(500).json({ message: 'Failed to create category', error: error.message });
     }
   };
+  // UPDATE CATEGORY
+exports.updateCategory = async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
   
+      const { id } = req.params;
+      const { category_name } = req.body;
+  
+      const category = await Category.findByPk(id);
+      if (!category) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+  
+      await category.update({ category_name });
+      res.status(200).json({ message: 'Category updated successfully', category });
+  
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to update category', error: error.message });
+    }
+  };
+  // DELETE CATEGORY
+  exports.deleteCategory = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const category = await Category.findByPk(id);
+      if (!category) {
+        return res.status(404).json({ message: 'Category not found' });
+      }
+
+      await category.destroy();
+      res.status(200).json({ message: 'Category deleted successfully' });
+
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to delete category', error: error.message });
+    }
+  };
+
+
+
+
