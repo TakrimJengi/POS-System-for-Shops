@@ -15,6 +15,7 @@ const RefreshToken = require('./models/RefreshToken');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Sync database
 sequelize.sync({ alter: true })
