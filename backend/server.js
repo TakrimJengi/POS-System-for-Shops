@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const sequelize = require('./config/db');
+const productRoutes = require('./routes/productRoutes');
 
 // Import models
 const User = require('./models/User');
@@ -54,7 +55,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
-
+app.use('/api/products', productRoutes);
 // Sync database
 sequelize.sync({ alter: true })
   .then(() => {
