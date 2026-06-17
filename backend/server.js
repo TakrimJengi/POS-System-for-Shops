@@ -18,6 +18,7 @@ const RefreshToken = require('./models/RefreshToken');
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 
 dotenv.config();
 
@@ -57,6 +58,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/inventory', inventoryRoutes);
+
 // Sync database
 sequelize.sync({ alter: true })
   .then(() => {
