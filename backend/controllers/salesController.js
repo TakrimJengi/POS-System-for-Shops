@@ -76,6 +76,44 @@ exports.createSale = async (req, res) => {
         sale_date: new Date()
       }, { transaction });
   
+
+// GET ALL SALES (Invoice History)
+exports.getAllSales = async (req, res) => {
+    try {
+      const sales = await Sale.findAll({
+        order: [['sale_date', 'DESC']]
+      });
+  
+      res.status(200).json(sales);
+  
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get sales', error: error.message });
+    }
+  };
+
+  // GET SINGLE INVOICE (with full details)
+exports.getInvoice = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const sale = await Sale.findByPk(id, {
+        include: [{
+          model: SaleDetail,
+          include: [{ model: Product, attributes: ['product_name'] }]
+        }]
+      });
+  
+      if (!sale) {
+        return res.status(404).json({ message: 'Invoice not found' });
+      }
+  
+      res.status(200).json(sale);
+  
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to get invoice', error: error.message });
+    }
+  };
+
       // Create sale details
       for (const detail of saleDetails) {
         await SaleDetail.create({
