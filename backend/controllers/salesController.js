@@ -75,9 +75,32 @@ exports.createSale = async (req, res) => {
         total_amount,
         sale_date: new Date()
       }, { transaction });
-  
 
-// GET ALL SALES (Invoice History)
+      // Create sale details
+      for (const detail of saleDetails) {
+        await SaleDetail.create({
+          sale_id: sale.id,
+          ...detail
+        }, { transaction });
+      }
+  
+      // Commit transaction
+      await transaction.commit();
+  
+      res.status(201).json({
+        message: 'Sale created successfully',
+        invoice_no: sale.invoice_no,
+        total_amount: sale.total_amount,
+        items_sold: saleDetails.length
+      });
+  
+    } catch (error) {
+      await transaction.rollback();
+      res.status(500).json({ message: 'Failed to create sale', error: error.message });
+    }
+  };
+
+  // GET ALL SALES (Invoice History)
 exports.getAllSales = async (req, res) => {
     try {
       const sales = await Sale.findAll({
@@ -111,29 +134,5 @@ exports.getInvoice = async (req, res) => {
   
     } catch (error) {
       res.status(500).json({ message: 'Failed to get invoice', error: error.message });
-    }
-  };
-
-      // Create sale details
-      for (const detail of saleDetails) {
-        await SaleDetail.create({
-          sale_id: sale.id,
-          ...detail
-        }, { transaction });
-      }
-  
-      // Commit transaction
-      await transaction.commit();
-  
-      res.status(201).json({
-        message: 'Sale created successfully',
-        invoice_no: sale.invoice_no,
-        total_amount: sale.total_amount,
-        items_sold: saleDetails.length
-      });
-  
-    } catch (error) {
-      await transaction.rollback();
-      res.status(500).json({ message: 'Failed to create sale', error: error.message });
     }
   };
