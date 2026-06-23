@@ -9,13 +9,11 @@ const User = sequelize.define('User', {
   },
   username: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   password: {
     type: DataTypes.STRING,
@@ -26,7 +24,11 @@ const User = sequelize.define('User', {
     defaultValue: 'cashier'
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    { unique: true, fields: ['username'], name: 'username_unique_idx' },
+    { unique: true, fields: ['email'], name: 'email_unique_idx' }
+  ]
 });
 
 module.exports = User;
