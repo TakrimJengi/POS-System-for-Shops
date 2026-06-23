@@ -19,7 +19,9 @@ const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
-
+const salesRoutes = require('./routes/salesRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const accountingRoutes = require('./routes/accountingRoutes');
 dotenv.config();
 
 const app = express();
@@ -59,6 +61,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/accounting', accountingRoutes);
+
 
 // Sync database
 sequelize.sync({ alter: true })
