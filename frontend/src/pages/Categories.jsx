@@ -14,7 +14,6 @@ function Categories() {
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
 
-  // Fetch categories when page loads
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -38,7 +37,7 @@ function Categories() {
     try {
       await api.post('/categories', { category_name: newCategoryName });
       setNewCategoryName('');
-      fetchCategories(); // Refresh list
+      fetchCategories();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add category');
     }
@@ -56,7 +55,6 @@ function Categories() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
-
     try {
       await api.delete(`/categories/${id}`);
       fetchCategories();
@@ -66,80 +64,69 @@ function Categories() {
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial', maxWidth: '700px', margin: '0 auto' }}>
-      <button onClick={() => navigate('/dashboard')} style={{ marginBottom: '1rem', cursor: 'pointer' }}>
-        ← Back to Dashboard
-      </button>
+    <div className="page-container narrow">
+      <button onClick={() => navigate('/dashboard')} className="back-btn">← Back to Dashboard</button>
 
-      <h1>Categories</h1>
+      <h1>🏷️ Categories</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <div className="alert alert-error">{error}</div>}
 
       {admin && (
-        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.5rem' }}>
           <input
             type="text"
             placeholder="New category name"
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
-            style={{ flex: 1, padding: '0.5rem' }}
+            style={{ flex: 1 }}
           />
-          <button type="submit" style={{ padding: '0.5rem 1rem', background: '#2E6DA4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            Add
-          </button>
+          <button type="submit" className="btn btn-primary">+ Add</button>
         </form>
       )}
 
       {loading ? (
-        <p>Loading...</p>
+        <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-              <th style={{ padding: '0.5rem' }}>ID</th>
-              <th style={{ padding: '0.5rem' }}>Category Name</th>
-              {admin && <th style={{ padding: '0.5rem' }}>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {categories.map((cat) => (
-              <tr key={cat.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '0.5rem' }}>{cat.id}</td>
-                <td style={{ padding: '0.5rem' }}>
-                  {editingId === cat.id ? (
-                    <input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      style={{ padding: '0.3rem' }}
-                    />
-                  ) : (
-                    cat.category_name
-                  )}
-                </td>
-                {admin && (
-                  <td style={{ padding: '0.5rem' }}>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Category Name</th>
+                {admin && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat) => (
+                <tr key={cat.id}>
+                  <td style={{ color: 'var(--text-muted)' }}>{cat.id}</td>
+                  <td>
                     {editingId === cat.id ? (
-                      <>
-                        <button onClick={() => handleUpdate(cat.id)} style={{ marginRight: '0.5rem' }}>Save</button>
-                        <button onClick={() => setEditingId(null)}>Cancel</button>
-                      </>
+                      <input value={editingName} onChange={(e) => setEditingName(e.target.value)} />
                     ) : (
-                      <>
-                        <button
-                          onClick={() => { setEditingId(cat.id); setEditingName(cat.category_name); }}
-                          style={{ marginRight: '0.5rem' }}
-                        >
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(cat.id)} style={{ color: 'red' }}>Delete</button>
-                      </>
+                      <strong>{cat.category_name}</strong>
                     )}
                   </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {admin && (
+                    <td>
+                      {editingId === cat.id ? (
+                        <span style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button onClick={() => handleUpdate(cat.id)} className="btn btn-success btn-sm">Save</button>
+                          <button onClick={() => setEditingId(null)} className="btn btn-secondary btn-sm">Cancel</button>
+                        </span>
+                      ) : (
+                        <span style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button onClick={() => { setEditingId(cat.id); setEditingName(cat.category_name); }} className="btn btn-secondary btn-sm">Edit</button>
+                          <button onClick={() => handleDelete(cat.id)} className="btn btn-danger btn-sm">Delete</button>
+                        </span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
