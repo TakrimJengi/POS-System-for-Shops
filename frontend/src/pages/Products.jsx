@@ -21,6 +21,7 @@ const [imageFile, setImageFile] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [editImageFile, setEditImageFile] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -85,12 +86,23 @@ const [imageFile, setImageFile] = useState(null);
       selling_price: product.selling_price,
       minimum_stock: product.minimum_stock
     });
+    setEditImageFile(null);
   };
 
   const handleUpdate = async (id) => {
     try {
-      await api.put(`/products/${id}`, editData);
+      const data = new FormData();
+      Object.keys(editData).forEach((key) => data.append(key, editData[key]));
+      if (editImageFile) {
+        data.append('image', editImageFile);
+      }
+  
+      await api.put(`/products/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+  
       setEditingId(null);
+      setEditImageFile(null);
       fetchProducts();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update product');
@@ -215,14 +227,15 @@ const [imageFile, setImageFile] = useState(null);
               {products.map((p) => (
                 <tr key={p.id}>
                   {editingId === p.id ? (
-                     <>
-                  <td>
-                    {p.image_url ? (
-                      <img src={`http://localhost:5000${p.image_url}`} alt={p.product_name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>📦</div>
-                    )}
-                  </td>
+                      <>
+                        <td>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setEditImageFile(e.target.files[0])}
+                            style={{ width: '90px', fontSize: '0.7rem' }}
+                          />
+                        </td>
     <td><input value={editData.product_name} onChange={(e) => setEditData({ ...editData, product_name: e.target.value })} style={{ width: '100%' }} /></td>
                       <td>
                         <select value={editData.category_id} onChange={(e) => setEditData({ ...editData, category_id: e.target.value })}>
