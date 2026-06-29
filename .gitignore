@@ -13,3 +13,6 @@ backend/.env
 .DS_Store
 Thumbs.db
 backend/config/config.json
+
+backend/uploads/*
+!backend/uploads/.gitkeep
