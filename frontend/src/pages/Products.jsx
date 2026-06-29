@@ -14,9 +14,10 @@ function Products() {
   const [search, setSearch] = useState('');
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
-    category_id: '', product_name: '', purchase_price: '', selling_price: '', stock_quantity: '', minimum_stock: ''
-  });
+const [formData, setFormData] = useState({
+  category_id: '', product_name: '', purchase_price: '', selling_price: '', stock_quantity: '', minimum_stock: ''
+});
+const [imageFile, setImageFile] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
@@ -56,8 +57,18 @@ function Products() {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/products', formData);
+      const data = new FormData();
+      Object.keys(formData).forEach((key) => data.append(key, formData[key]));
+      if (imageFile) {
+        data.append('image', imageFile);
+      }
+  
+      await api.post('/products', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+  
       setFormData({ category_id: '', product_name: '', purchase_price: '', selling_price: '', stock_quantity: '', minimum_stock: '' });
+      setImageFile(null);
       setShowAddForm(false);
       fetchProducts();
     } catch (err) {
@@ -166,7 +177,22 @@ function Products() {
                   value={formData.minimum_stock}
                   onChange={(e) => setFormData({ ...formData, minimum_stock: e.target.value })}
                 />
+                <input
+                  type="file" placeholder="Image"
+                  value={formData.image}
+                  onChange={(e) => setImageFile(e.target.files[0])}
+                />
               </div>
+              <div style={{ marginBottom: '0.7rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                     Product Picture (optional)
+                      </label>
+                     <input
+                       type="file"
+                        accept="image/*"
+                        onChange={(e) => setImageFile(e.target.files[0])}
+                      />
+                </div>
               <button type="submit" className="btn btn-success" style={{ width: '100%' }}>Save Product</button>
             </form>
           )}
@@ -178,8 +204,9 @@ function Products() {
       ) : (
         <div className="table-wrap">
           <table>
-            <thead>
+          <thead>
               <tr>
+                <th>Image</th>
                 <th>Name</th>
                 <th>Category</th>
                 <th>Purchase</th>
@@ -187,7 +214,7 @@ function Products() {
                 <th>Stock</th>
                 {admin && <th>Actions</th>}
               </tr>
-            </thead>
+          </thead>
             <tbody>
               {products.map((p) => (
                 <tr key={p.id}>
@@ -211,6 +238,13 @@ function Products() {
                     </>
                   ) : (
                     <>
+                      <td>
+                        {p.image_url ? (
+                          <img src={`http://localhost:5000${p.image_url}`} alt={p.product_name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>📦</div>
+                        )}
+                      </td>
                       <td><strong>{p.product_name}</strong></td>
                       <td>{p.Category?.category_name}</td>
                       <td>${p.purchase_price}</td>
