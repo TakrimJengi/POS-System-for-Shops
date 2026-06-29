@@ -33,50 +33,40 @@ function UserManagement() {
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial', maxWidth: '500px', margin: '0 auto' }}>
-      <button onClick={() => navigate('/dashboard')} style={{ marginBottom: '1rem', cursor: 'pointer' }}>
-        ← Back to Dashboard
-      </button>
+    <div className="page-container narrow">
+      <button onClick={() => navigate('/dashboard')} className="back-btn">← Back to Dashboard</button>
 
-      <h1>User Management</h1>
-      <p style={{ color: '#777' }}>Create new staff accounts (admin or cashier).</p>
+      <h1>👥 User Management</h1>
+      <p style={{ color: 'var(--text-muted)', marginBottom: '1.2rem' }}>Create new staff accounts (admin or cashier).</p>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+      {error && <div className="alert alert-error">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
 
-      <form onSubmit={handleSubmit} style={{ background: '#f9f9f9', padding: '1.5rem', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+      <form onSubmit={handleSubmit} className="form-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
         <input
           type="text" placeholder="Username" required
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-          style={{ padding: '0.6rem' }}
         />
         <input
           type="email" placeholder="Email" required
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          style={{ padding: '0.6rem' }}
         />
         <input
           type="password" placeholder="Password (min 6 characters)" required
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          style={{ padding: '0.6rem' }}
         />
         <select
           value={formData.role}
           onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-          style={{ padding: '0.6rem' }}
         >
           <option value="cashier">Cashier</option>
           <option value="admin">Admin</option>
         </select>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          style={{ padding: '0.7rem', background: '#2E6DA4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
+        <button type="submit" disabled={submitting} className="btn btn-primary" style={{ padding: '0.7rem' }}>
           {submitting ? 'Creating...' : 'Create User'}
         </button>
       </form>
