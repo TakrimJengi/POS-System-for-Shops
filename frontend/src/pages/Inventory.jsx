@@ -23,7 +23,7 @@ function Inventory() {
     try {
       setLoading(true);
       const res = await api.get('/inventory');
-      setInventory(res.data.inventory || []);
+      setInventory(res.data || []);
     } catch (err) {
       setError('Failed to load inventory');
       setInventory([]);
