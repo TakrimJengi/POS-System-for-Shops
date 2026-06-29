@@ -18,7 +18,6 @@ function Login() {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('refreshToken', res.data.refreshToken);
 
-      // Immediately get access token
       const tokenRes = await api.post('/auth/refresh-token', {
         refreshToken: res.data.refreshToken
       });
@@ -33,11 +32,15 @@ function Login() {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f5f5f5' }}>
-      <form onSubmit={handleSubmit} style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)', width: '320px' }}>
-        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>POS System Login</h2>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <form onSubmit={handleSubmit} className="card" style={{ width: '340px', padding: '2.2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '2.2rem', marginBottom: '0.4rem' }}>🛍️</div>
+          <h1 style={{ fontSize: '1.5rem', margin: 0 }}>POS System</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: '0.3rem 0 0 0' }}>Sign in to continue</p>
+        </div>
 
-        {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+        {error && <div className="alert alert-error">{error}</div>}
 
         <input
           type="email"
@@ -45,7 +48,7 @@ function Login() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ width: '100%', padding: '0.6rem', marginBottom: '1rem', boxSizing: 'border-box' }}
+          style={{ width: '100%', marginBottom: '0.8rem' }}
         />
 
         <input
@@ -54,14 +57,10 @@ function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width: '100%', padding: '0.6rem', marginBottom: '1rem', boxSizing: 'border-box' }}
+          style={{ width: '100%', marginBottom: '1.2rem' }}
         />
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ width: '100%', padding: '0.6rem', background: '#2E6DA4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
+        <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
           {loading ? 'Logging in...' : 'Login'}
         </button>
       </form>
