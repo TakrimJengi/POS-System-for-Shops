@@ -59,13 +59,17 @@ exports.getProduct = async (req, res) => {
         return res.status(404).json({ message: 'Category not found' });
       }
   
+      // If a file was uploaded, build its accessible URL path
+      const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+  
       const product = await Product.create({
         category_id,
         product_name,
         purchase_price,
         selling_price,
         stock_quantity: stock_quantity || 0,
-        minimum_stock: minimum_stock || 5
+        minimum_stock: minimum_stock || 5,
+        image_url
       });
   
       res.status(201).json({ message: 'Product created successfully', product });
@@ -99,7 +103,13 @@ exports.getProduct = async (req, res) => {
         }
       }
   
-      await product.update({ category_id, product_name, purchase_price, selling_price, minimum_stock });
+      // Only update image if a new one was uploaded, otherwise keep the existing one
+      const updateData = { category_id, product_name, purchase_price, selling_price, minimum_stock };
+      if (req.file) {
+        updateData.image_url = `/uploads/${req.file.filename}`;
+      }
+  
+      await product.update(updateData);
       res.status(200).json({ message: 'Product updated successfully', product });
   
     } catch (error) {

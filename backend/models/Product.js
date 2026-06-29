@@ -30,6 +30,10 @@ const Product = sequelize.define('Product', {
   minimum_stock: {
     type: DataTypes.INTEGER,
     defaultValue: 5
+  },
+  image_url: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true

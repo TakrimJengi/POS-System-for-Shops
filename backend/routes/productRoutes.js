@@ -3,6 +3,7 @@ const router = express.Router();
 const productController = require('../controllers/productController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 const { body } = require('express-validator');
+const upload = require('../config/upload');
 
 // Validation rules
 const productValidation = [
@@ -27,8 +28,8 @@ const productValidation = [
   // Product routes
   router.get('/', verifyToken, productController.getAllProducts);
   router.get('/:id', verifyToken, productController.getProduct);
-  router.post('/', verifyToken, isAdmin, productValidation, productController.addProduct);
-  router.put('/:id', verifyToken, isAdmin, productValidation, productController.updateProduct);
+  router.post('/', verifyToken, isAdmin, upload.single('image'), productValidation, productController.addProduct);
+  router.put('/:id', verifyToken, isAdmin, upload.single('image'), productValidation, productController.updateProduct);
   router.delete('/:id', verifyToken, isAdmin, productController.deleteProduct);
   
   module.exports = router;
