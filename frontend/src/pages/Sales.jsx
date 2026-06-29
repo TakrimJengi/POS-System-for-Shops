@@ -96,11 +96,16 @@ function Sales() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.9rem' }}>
               {products.map((p) => (
                 <div
-                  key={p.id}
-                  onClick={() => p.stock_quantity > 0 && addToCart(p)}
-                  className={`product-tile ${p.stock_quantity <= 0 ? 'disabled' : ''}`}
-                >
-                  <strong>{p.product_name}</strong>
+                key={p.id}
+                onClick={() => p.stock_quantity > 0 && addToCart(p)}
+                className={`product-tile ${p.stock_quantity <= 0 ? 'disabled' : ''}`}
+              >
+                {p.image_url ? (
+                  <img src={`http://localhost:5000${p.image_url}`} alt={p.product_name} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.5rem' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '80px', borderRadius: '8px', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: '0.5rem' }}>📦</div>
+                )}
+                <strong>{p.product_name}</strong>
                   <p style={{ margin: '0.4rem 0', color: 'var(--primary-dark)', fontWeight: 700, fontSize: '1.1rem' }}>${p.selling_price}</p>
                   <p style={{ margin: 0, fontSize: '0.8rem', color: p.stock_quantity > 0 ? 'var(--text-muted)' : 'var(--danger)' }}>
                     Stock: {p.stock_quantity}
