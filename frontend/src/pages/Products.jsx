@@ -97,152 +97,138 @@ function Products() {
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial', maxWidth: '1000px', margin: '0 auto' }}>
-      <button onClick={() => navigate('/dashboard')} style={{ marginBottom: '1rem', cursor: 'pointer' }}>
-        ← Back to Dashboard
-      </button>
+    <div className="page-container">
+      <button onClick={() => navigate('/dashboard')} className="back-btn">← Back to Dashboard</button>
 
-      <h1>Products</h1>
+      <h1>📦 Products</h1>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <div className="alert alert-error">{error}</div>}
 
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.2rem' }}>
         <input
           type="text"
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, padding: '0.5rem' }}
+          style={{ flex: 1 }}
         />
-        <button type="submit" style={{ padding: '0.5rem 1rem' }}>Search</button>
+        <button type="submit" className="btn btn-secondary">Search</button>
         {search && (
-          <button type="button" onClick={() => { setSearch(''); fetchProducts(); }} style={{ padding: '0.5rem 1rem' }}>
-            Clear
-          </button>
+          <button type="button" onClick={() => { setSearch(''); fetchProducts(); }} className="btn btn-secondary">Clear</button>
         )}
       </form>
 
       {admin && (
         <div style={{ marginBottom: '1.5rem' }}>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            style={{ padding: '0.5rem 1rem', background: '#2E6DA4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginBottom: '1rem' }}
-          >
+          <button onClick={() => setShowAddForm(!showAddForm)} className="btn btn-primary" style={{ marginBottom: '1rem' }}>
             {showAddForm ? 'Cancel' : '+ Add Product'}
           </button>
 
           {showAddForm && (
-            <form onSubmit={handleAdd} style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              <select
-                value={formData.category_id}
-                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                required
-                style={{ padding: '0.5rem' }}
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
-                ))}
-              </select>
-
-              <input
-                type="text" placeholder="Product Name" required
-                value={formData.product_name}
-                onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
-                style={{ padding: '0.5rem' }}
-              />
-              <input
-                type="number" placeholder="Purchase Price" required
-                value={formData.purchase_price}
-                onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
-                style={{ padding: '0.5rem' }}
-              />
-              <input
-                type="number" placeholder="Selling Price" required
-                value={formData.selling_price}
-                onChange={(e) => setFormData({ ...formData, selling_price: e.target.value })}
-                style={{ padding: '0.5rem' }}
-              />
-              <input
-                type="number" placeholder="Stock Quantity"
-                value={formData.stock_quantity}
-                onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
-                style={{ padding: '0.5rem' }}
-              />
-              <input
-                type="number" placeholder="Minimum Stock"
-                value={formData.minimum_stock}
-                onChange={(e) => setFormData({ ...formData, minimum_stock: e.target.value })}
-                style={{ padding: '0.5rem' }}
-              />
-              <button type="submit" style={{ gridColumn: 'span 2', padding: '0.5rem', background: '#2E6DA4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                Save Product
-              </button>
+            <form onSubmit={handleAdd} className="form-card">
+              <div className="form-row" style={{ marginBottom: '0.7rem' }}>
+                <select
+                  value={formData.category_id}
+                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                  required
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                  ))}
+                </select>
+                <input
+                  type="text" placeholder="Product Name" required
+                  value={formData.product_name}
+                  onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+                />
+              </div>
+              <div className="form-row" style={{ marginBottom: '0.7rem' }}>
+                <input
+                  type="number" placeholder="Purchase Price" required
+                  value={formData.purchase_price}
+                  onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
+                />
+                <input
+                  type="number" placeholder="Selling Price" required
+                  value={formData.selling_price}
+                  onChange={(e) => setFormData({ ...formData, selling_price: e.target.value })}
+                />
+              </div>
+              <div className="form-row" style={{ marginBottom: '0.7rem' }}>
+                <input
+                  type="number" placeholder="Stock Quantity"
+                  value={formData.stock_quantity}
+                  onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
+                />
+                <input
+                  type="number" placeholder="Minimum Stock"
+                  value={formData.minimum_stock}
+                  onChange={(e) => setFormData({ ...formData, minimum_stock: e.target.value })}
+                />
+              </div>
+              <button type="submit" className="btn btn-success" style={{ width: '100%' }}>Save Product</button>
             </form>
           )}
         </div>
       )}
 
       {loading ? (
-        <p>Loading...</p>
+        <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-              <th style={{ padding: '0.5rem' }}>Name</th>
-              <th style={{ padding: '0.5rem' }}>Category</th>
-              <th style={{ padding: '0.5rem' }}>Purchase</th>
-              <th style={{ padding: '0.5rem' }}>Selling</th>
-              <th style={{ padding: '0.5rem' }}>Stock</th>
-              {admin && <th style={{ padding: '0.5rem' }}>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
-                {editingId === p.id ? (
-                  <>
-                    <td style={{ padding: '0.5rem' }}>
-                      <input value={editData.product_name} onChange={(e) => setEditData({ ...editData, product_name: e.target.value })} style={{ width: '100%' }} />
-                    </td>
-                    <td style={{ padding: '0.5rem' }}>
-                      <select value={editData.category_id} onChange={(e) => setEditData({ ...editData, category_id: e.target.value })}>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.category_name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td style={{ padding: '0.5rem' }}>
-                      <input type="number" value={editData.purchase_price} onChange={(e) => setEditData({ ...editData, purchase_price: e.target.value })} style={{ width: '70px' }} />
-                    </td>
-                    <td style={{ padding: '0.5rem' }}>
-                      <input type="number" value={editData.selling_price} onChange={(e) => setEditData({ ...editData, selling_price: e.target.value })} style={{ width: '70px' }} />
-                    </td>
-                    <td style={{ padding: '0.5rem' }}>{p.stock_quantity}</td>
-                    <td style={{ padding: '0.5rem' }}>
-                      <button onClick={() => handleUpdate(p.id)} style={{ marginRight: '0.5rem' }}>Save</button>
-                      <button onClick={() => setEditingId(null)}>Cancel</button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td style={{ padding: '0.5rem' }}>{p.product_name}</td>
-                    <td style={{ padding: '0.5rem' }}>{p.Category?.category_name}</td>
-                    <td style={{ padding: '0.5rem' }}>{p.purchase_price}</td>
-                    <td style={{ padding: '0.5rem' }}>{p.selling_price}</td>
-                    <td style={{ padding: '0.5rem' }}>{p.stock_quantity}</td>
-                    {admin && (
-                      <td style={{ padding: '0.5rem' }}>
-                        <button onClick={() => startEdit(p)} style={{ marginRight: '0.5rem' }}>Edit</button>
-                        <button onClick={() => handleDelete(p.id)} style={{ color: 'red' }}>Delete</button>
-                      </td>
-                    )}
-                  </>
-                )}
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Purchase</th>
+                <th>Selling</th>
+                <th>Stock</th>
+                {admin && <th>Actions</th>}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map((p) => (
+                <tr key={p.id}>
+                  {editingId === p.id ? (
+                    <>
+                      <td><input value={editData.product_name} onChange={(e) => setEditData({ ...editData, product_name: e.target.value })} style={{ width: '100%' }} /></td>
+                      <td>
+                        <select value={editData.category_id} onChange={(e) => setEditData({ ...editData, category_id: e.target.value })}>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td><input type="number" value={editData.purchase_price} onChange={(e) => setEditData({ ...editData, purchase_price: e.target.value })} style={{ width: '80px' }} /></td>
+                      <td><input type="number" value={editData.selling_price} onChange={(e) => setEditData({ ...editData, selling_price: e.target.value })} style={{ width: '80px' }} /></td>
+                      <td>{p.stock_quantity}</td>
+                      <td style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button onClick={() => handleUpdate(p.id)} className="btn btn-success btn-sm">Save</button>
+                        <button onClick={() => setEditingId(null)} className="btn btn-secondary btn-sm">Cancel</button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td><strong>{p.product_name}</strong></td>
+                      <td>{p.Category?.category_name}</td>
+                      <td>${p.purchase_price}</td>
+                      <td>${p.selling_price}</td>
+                      <td>{p.stock_quantity}</td>
+                      {admin && (
+                        <td style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button onClick={() => startEdit(p)} className="btn btn-secondary btn-sm">Edit</button>
+                          <button onClick={() => handleDelete(p.id)} className="btn btn-danger btn-sm">Delete</button>
+                        </td>
+                      )}
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
