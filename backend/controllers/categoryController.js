@@ -34,7 +34,7 @@ exports.addCategory = async (req, res) => {
     }
   };
   // UPDATE CATEGORY
-exports.updateCategory = async (req, res) => {
+  exports.updateCategory = async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -44,13 +44,16 @@ exports.updateCategory = async (req, res) => {
       const { id } = req.params;
       const { category_name } = req.body;
   
-      const category = await Category.findByPk(id);
-      if (!category) {
+      const [updatedCount] = await Category.update(
+        { category_name },
+        { where: { id } }
+      );
+  
+      if (updatedCount === 0) {
         return res.status(404).json({ message: 'Category not found' });
       }
   
-      await category.update({ category_name });
-      res.status(200).json({ message: 'Category updated successfully', category });
+      res.status(200).json({ message: 'Category updated successfully' });
   
     } catch (error) {
       res.status(500).json({ message: 'Failed to update category', error: error.message });
