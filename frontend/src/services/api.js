@@ -4,6 +4,10 @@ const API_URL = 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_URL,
+  headers: {
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache'
+  }
 });
 
 // Automatically attach access token to every request
