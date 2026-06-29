@@ -177,11 +177,7 @@ const [imageFile, setImageFile] = useState(null);
                   value={formData.minimum_stock}
                   onChange={(e) => setFormData({ ...formData, minimum_stock: e.target.value })}
                 />
-                <input
-                  type="file" placeholder="Image"
-                  value={formData.image}
-                  onChange={(e) => setImageFile(e.target.files[0])}
-                />
+               
               </div>
               <div style={{ marginBottom: '0.7rem' }}>
                   <label style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -219,8 +215,15 @@ const [imageFile, setImageFile] = useState(null);
               {products.map((p) => (
                 <tr key={p.id}>
                   {editingId === p.id ? (
-                    <>
-                      <td><input value={editData.product_name} onChange={(e) => setEditData({ ...editData, product_name: e.target.value })} style={{ width: '100%' }} /></td>
+                     <>
+                  <td>
+                    {p.image_url ? (
+                      <img src={`http://localhost:5000${p.image_url}`} alt={p.product_name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>📦</div>
+                    )}
+                  </td>
+    <td><input value={editData.product_name} onChange={(e) => setEditData({ ...editData, product_name: e.target.value })} style={{ width: '100%' }} /></td>
                       <td>
                         <select value={editData.category_id} onChange={(e) => setEditData({ ...editData, category_id: e.target.value })}>
                           {categories.map((cat) => (
