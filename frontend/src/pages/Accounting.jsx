@@ -58,115 +58,107 @@ function Accounting() {
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+  if (loading) return <div className="page-container"><p style={{ color: 'var(--text-muted)' }}>Loading...</p></div>;
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial', maxWidth: '900px', margin: '0 auto' }}>
-      <button onClick={() => navigate('/dashboard')} style={{ marginBottom: '1rem', cursor: 'pointer' }}>
-        ← Back to Dashboard
-      </button>
+    <div className="page-container">
+      <button onClick={() => navigate('/dashboard')} className="back-btn">← Back to Dashboard</button>
 
-      <h1>Accounting</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h1>💰 Accounting</h1>
+      {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Financial Summary Cards */}
       {summary && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-          <SummaryCard label="Total Income" value={summary.total_income} color="#27ae60" />
-          <SummaryCard label="Total Expenses" value={summary.total_expenses} color="#c0392b" />
-          <SummaryCard label="Profit" value={summary.profit} color={summary.profit >= 0 ? '#27ae60' : '#c0392b'} />
+          <div className="summary-card">
+            <p className="label">Total Income</p>
+            <h2 className="value" style={{ color: 'var(--success)' }}>${summary.total_income}</h2>
+          </div>
+          <div className="summary-card">
+            <p className="label">Total Expenses</p>
+            <h2 className="value" style={{ color: 'var(--danger)' }}>${summary.total_expenses}</h2>
+          </div>
+          <div className="summary-card">
+            <p className="label">Profit</p>
+            <h2 className="value" style={{ color: summary.profit >= 0 ? 'var(--success)' : 'var(--danger)' }}>${summary.profit}</h2>
+          </div>
         </div>
       )}
 
-      {/* Category-wise Sales */}
-      <h2>Category-wise Sales</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2rem' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-            <th style={{ padding: '0.5rem' }}>Category</th>
-            <th style={{ padding: '0.5rem' }}>Quantity Sold</th>
-            <th style={{ padding: '0.5rem' }}>Revenue</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categoryReport.map((cat, idx) => (
-            <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-              <td style={{ padding: '0.5rem' }}>{cat.category_name}</td>
-              <td style={{ padding: '0.5rem' }}>{cat.total_quantity_sold}</td>
-              <td style={{ padding: '0.5rem' }}>${cat.total_revenue}</td>
+      <h3 style={{ marginBottom: '0.8rem' }}>Category-wise Sales</h3>
+      <div className="table-wrap" style={{ marginBottom: '2rem' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Quantity Sold</th>
+              <th>Revenue</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {categoryReport.map((cat, idx) => (
+              <tr key={idx}>
+                <td><strong>{cat.category_name}</strong></td>
+                <td>{cat.total_quantity_sold}</td>
+                <td>${cat.total_revenue}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Expenses */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Expenses</h2>
-        <button
-          onClick={() => setShowExpenseForm(!showExpenseForm)}
-          style={{ padding: '0.5rem 1rem', background: '#2E6DA4', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.8rem' }}>
+        <h3>Expenses</h3>
+        <button onClick={() => setShowExpenseForm(!showExpenseForm)} className="btn btn-primary btn-sm">
           {showExpenseForm ? 'Cancel' : '+ Add Expense'}
         </button>
       </div>
 
       {showExpenseForm && (
-        <form onSubmit={handleAddExpense} style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '8px', display: 'flex', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}>
+        <form onSubmit={handleAddExpense} className="form-card" style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.2rem', flexWrap: 'wrap' }}>
           <input
             type="text" placeholder="Description" required
             value={expenseForm.description}
             onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
-            style={{ flex: 2, padding: '0.5rem' }}
+            style={{ flex: 2, minWidth: '180px' }}
           />
           <input
             type="number" placeholder="Amount" required
             value={expenseForm.amount}
             onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
-            style={{ flex: 1, padding: '0.5rem' }}
+            style={{ flex: 1, minWidth: '100px' }}
           />
           <input
             type="date"
             value={expenseForm.expense_date}
             onChange={(e) => setExpenseForm({ ...expenseForm, expense_date: e.target.value })}
-            style={{ flex: 1, padding: '0.5rem' }}
+            style={{ flex: 1, minWidth: '140px' }}
           />
-          <button type="submit" style={{ padding: '0.5rem 1rem', background: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-            Save
-          </button>
+          <button type="submit" className="btn btn-success">Save</button>
         </form>
       )}
 
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #ddd', textAlign: 'left' }}>
-            <th style={{ padding: '0.5rem' }}>Description</th>
-            <th style={{ padding: '0.5rem' }}>Amount</th>
-            <th style={{ padding: '0.5rem' }}>Date</th>
-            <th style={{ padding: '0.5rem' }}>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {expenses.map((exp) => (
-            <tr key={exp.id} style={{ borderBottom: '1px solid #eee' }}>
-              <td style={{ padding: '0.5rem' }}>{exp.description}</td>
-              <td style={{ padding: '0.5rem' }}>${exp.amount}</td>
-              <td style={{ padding: '0.5rem' }}>{exp.expense_date}</td>
-              <td style={{ padding: '0.5rem' }}>
-                <button onClick={() => handleDeleteExpense(exp.id)} style={{ color: 'red' }}>Delete</button>
-              </td>
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function SummaryCard({ label, value, color }) {
-  return (
-    <div style={{ background: 'white', border: `2px solid ${color}`, borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-      <p style={{ margin: 0, color: '#777', fontSize: '0.9rem' }}>{label}</p>
-      <h2 style={{ margin: '0.3rem 0 0 0', color }}>${value}</h2>
+          </thead>
+          <tbody>
+            {expenses.map((exp) => (
+              <tr key={exp.id}>
+                <td>{exp.description}</td>
+                <td>${exp.amount}</td>
+                <td>{exp.expense_date}</td>
+                <td><button onClick={() => handleDeleteExpense(exp.id)} className="btn btn-danger btn-sm">Delete</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
