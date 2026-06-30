@@ -11,6 +11,11 @@ function Sales() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [invoiceModal, setInvoiceModal] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [salesHistory, setSalesHistory] = useState([]);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -57,7 +62,29 @@ function Sales() {
     setCart(cart.filter((item) => item.product_id !== productId));
   };
 
+  const fetchSalesHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      const res = await api.get('/sales');
+      setSalesHistory(res.data);
+    } catch (err) {
+      setError('Failed to load sales history');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+  
+  const fetchInvoiceDetail = async (id) => {
+    try {
+      const res = await api.get(`/sales/${id}`);
+      setSelectedInvoice(res.data);
+    } catch (err) {
+      setError('Failed to load invoice');
+    }
+  };
+  
   const cartTotal = cart.reduce((sum, item) => sum + (item.selling_price * item.quantity), 0);
+
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -68,7 +95,11 @@ function Sales() {
     try {
       const items = cart.map((item) => ({ product_id: item.product_id, quantity: item.quantity }));
       const res = await api.post('/sales', { items });
-      setSuccess(`✅ Sale completed! Invoice: ${res.data.invoice_no} | Total: $${res.data.total_amount}`);
+      setInvoiceModal({
+        invoice_no: res.data.invoice_no,
+        total_amount: res.data.total_amount,
+        items: cart
+      });
       setCart([]);
       fetchProducts();
     } catch (err) {
@@ -84,9 +115,136 @@ function Sales() {
 
       <h1>🛒 New Sale</h1>
 
+      <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1.5rem' }}>
+        <button
+          onClick={() => setShowHistory(false)}
+          className={`btn btn-sm ${!showHistory ? 'btn-primary' : 'btn-secondary'}`}>
+          🛒 New Sale
+        </button>
+        <button
+          onClick={() => { setShowHistory(true); fetchSalesHistory(); }}
+          className={`btn btn-sm ${showHistory ? 'btn-primary' : 'btn-secondary'}`}>
+          📋 Sales History
+        </button>
+      </div>
+
+      {/* Invoice Modal */}
+      {invoiceModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '2rem', minWidth: '380px', maxWidth: '500px', width: '90%' }}>
+            <h2 style={{ textAlign: 'center', marginBottom: '0.3rem' }}>✅ Sale Complete</h2>
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{invoiceModal.invoice_no}</p>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceModal.items.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{item.product_name}</td>
+                      <td>{item.quantity}</td>
+                      <td>${item.selling_price}</td>
+                      <td>${(item.selling_price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem', fontWeight: 700, fontSize: '1.1rem' }}>
+              <span>Total</span>
+              <span style={{ color: 'var(--success)' }}>${invoiceModal.total_amount}</span>
+            </div>
+            <button onClick={() => setInvoiceModal(null)} className="btn btn-primary" style={{ width: '100%', marginTop: '1.2rem' }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {showHistory ? (
+        <div>
+          {historyLoading ? (
+            <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+          ) : (
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salesHistory.map((sale) => (
+                    <tr key={sale.id}>
+                      <td><strong>{sale.invoice_no}</strong></td>
+                      <td>{sale.sale_date}</td>
+                      <td>${sale.total_amount}</td>
+                      <td>
+                        <button
+                          onClick={() => fetchInvoiceDetail(sale.id)}
+                          className="btn btn-primary btn-sm">
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Selected Invoice Detail Modal */}
+          {selectedInvoice && (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+              <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '2rem', minWidth: '380px', maxWidth: '500px', width: '90%' }}>
+                <h2 style={{ textAlign: 'center', marginBottom: '0.3rem' }}>🧾 Invoice</h2>
+                <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{selectedInvoice.invoice_no}</p>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Unit Price</th>
+                        <th>Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedInvoice.SaleDetails.map((detail, idx) => (
+                        <tr key={idx}>
+                          <td>{detail.Product.product_name}</td>
+                          <td>{detail.quantity}</td>
+                          <td>${detail.unit_price}</td>
+                          <td>${(detail.unit_price * detail.quantity).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem', fontWeight: 700, fontSize: '1.1rem' }}>
+                  <span>Total</span>
+                  <span style={{ color: 'var(--success)' }}>${selectedInvoice.total_amount}</span>
+                </div>
+                <button onClick={() => setSelectedInvoice(null)} className="btn btn-primary" style={{ width: '100%', marginTop: '1.2rem' }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="pos-layout">
         <div>
           <h3 style={{ marginBottom: '1rem' }}>Products</h3>
@@ -149,6 +307,7 @@ function Sales() {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }
