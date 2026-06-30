@@ -13,28 +13,77 @@ function Accounting() {
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expenseForm, setExpenseForm] = useState({ description: '', amount: '', expense_date: '' });
+  const [dateRange, setDateRange] = useState({ start_date: '', end_date: '' });
+  const [activePreset, setActivePreset] = useState('all');
+  const [basketPairs, setBasketPairs] = useState([]);
+  const [basketLoading, setBasketLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+ 
+  const fetchAll = async (range = dateRange) => {
+  try {
+    setLoading(true);
 
-  const fetchAll = async () => {
-    try {
-      setLoading(true);
-      const [summaryRes, categoryRes, expensesRes] = await Promise.all([
-        api.get('/accounting/summary'),
-        api.get('/accounting/category-sales'),
-        api.get('/expenses')
-      ]);
-      setSummary(summaryRes.data);
-      setCategoryReport(categoryRes.data.category_report);
-      setExpenses(expensesRes.data);
-    } catch (err) {
-      setError('Failed to load accounting data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const params = (range.start_date && range.end_date)
+      ? `?start_date=${range.start_date}&end_date=${range.end_date}`
+      : '';
+
+    const [summaryRes, categoryRes, expensesRes] = await Promise.all([
+      api.get(`/accounting/summary${params}`),
+      api.get(`/accounting/category-sales${params}`),
+      api.get('/expenses')
+    ]);
+    setSummary(summaryRes.data);
+    setCategoryReport(categoryRes.data.category_report);
+    setExpenses(expensesRes.data);
+  } catch (err) {
+    setError('Failed to load accounting data');
+  } finally {
+    setLoading(false);
+  }
+};
+useEffect(() => {
+  fetchAll();
+  fetchBasket();
+}, []);
+
+const fetchBasket = async () => {
+  try {
+    setBasketLoading(true);
+    const res = await api.get('/market-basket/analyze');
+    setBasketPairs(res.data.pairs || []);
+  } catch (err) {
+    setError('Failed to load market basket analysis');
+  } finally {
+    setBasketLoading(false);
+  }
+};
+// Format a Date object as YYYY-MM-DD for the API
+const formatDate = (date) => date.toISOString().split('T')[0];
+
+const applyPreset = (preset) => {
+  setActivePreset(preset);
+  const today = new Date();
+  let start, end;
+
+  if (preset === 'week') {
+    start = new Date(today);
+    start.setDate(today.getDate() - 6); // last 7 days including today
+    end = today;
+  } else if (preset === 'month') {
+    start = new Date(today.getFullYear(), today.getMonth(), 1); // 1st of this month
+    end = today;
+  } else {
+    // 'all' preset - clear the range
+    const cleared = { start_date: '', end_date: '' };
+    setDateRange(cleared);
+    fetchAll(cleared);
+    return;
+  }
+
+  const newRange = { start_date: formatDate(start), end_date: formatDate(end) };
+  setDateRange(newRange);
+  fetchAll(newRange);
+};
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
@@ -159,6 +208,39 @@ function Accounting() {
           </tbody>
         </table>
       </div>
+      <h3 style={{ marginTop: '2rem', marginBottom: '0.8rem' }}>🛒 Frequently Bought Together</h3>
+{basketLoading ? (
+  <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+) : basketPairs.length === 0 ? (
+  <p style={{ color: 'var(--text-muted)' }}>Not enough sales data yet to find patterns.</p>
+) : (
+  <div className="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>Confidence</th>
+          <th>Support</th>
+          <th>Times Together</th>
+        </tr>
+      </thead>
+      <tbody>
+        {basketPairs.map((pair, idx) => (
+          <tr key={idx}>
+            <td>{pair.insight}</td>
+            <td>
+              <span className="badge badge-success">
+                {Math.max(pair.confidence_a_to_b_percent, pair.confidence_b_to_a_percent)}%
+              </span>
+            </td>
+            <td>{pair.support_percent}%</td>
+            <td>{pair.times_bought_together}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
     </div>
   );
 }

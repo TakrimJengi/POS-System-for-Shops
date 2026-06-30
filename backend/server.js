@@ -22,6 +22,7 @@ const inventoryRoutes = require('./routes/inventoryRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const expenseRoutes = require('./routes/expenseRoutes');
 const accountingRoutes = require('./routes/accountingRoutes');
+const marketBasketRoutes = require('./routes/marketBasketRoutes');
 dotenv.config();
 
 const app = express();
@@ -65,7 +66,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/accounting', accountingRoutes);
-
+app.use('/api/market-basket', marketBasketRoutes);
 
 // Sync database
 sequelize.sync({ alter: true })
