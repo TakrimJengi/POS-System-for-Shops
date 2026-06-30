@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const Expense = require('../models/Expense');
 const { Op } = require('sequelize');
 
 // GET ALL PRODUCTS
@@ -71,7 +72,15 @@ exports.getProduct = async (req, res) => {
         minimum_stock: minimum_stock || 5,
         image_url
       });
-  
+      // Auto-log initial stock as an expense if stock_quantity was provided
+    if (stock_quantity && stock_quantity > 0) {
+      const expenseAmount = parseFloat(purchase_price) * parseInt(stock_quantity);
+      await Expense.create({
+        description: `New Product - ${product_name} (${stock_quantity} units @ $${purchase_price})`,
+        amount: expenseAmount,
+        expense_date: new Date().toISOString().split('T')[0]
+      });
+    }
       res.status(201).json({ message: 'Product created successfully', product });
   
     } catch (error) {
