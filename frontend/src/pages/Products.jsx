@@ -12,6 +12,8 @@ function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
 
   const [showAddForm, setShowAddForm] = useState(false);
 const [formData, setFormData] = useState({
@@ -52,6 +54,7 @@ const [imageFile, setImageFile] = useState(null);
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setCurrentPage(1);
     fetchProducts(search);
   };
 
@@ -118,6 +121,12 @@ const [imageFile, setImageFile] = useState(null);
       setError(err.response?.data?.message || 'Failed to delete product');
     }
   };
+
+  const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="page-container">
@@ -224,7 +233,7 @@ const [imageFile, setImageFile] = useState(null);
               </tr>
           </thead>
             <tbody>
-              {products.map((p) => (
+              {paginatedProducts.map((p) => (
                 <tr key={p.id}>
                   {editingId === p.id ? (
                       <>
@@ -278,6 +287,14 @@ const [imageFile, setImageFile] = useState(null);
               ))}
             </tbody>
           </table>
+          </div>
+      )}
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '1rem' }}>
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
+          <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{currentPage} / {totalPages}</span>
+          <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="btn btn-secondary btn-sm">Next →</button>
         </div>
       )}
     </div>
