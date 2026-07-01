@@ -16,6 +16,10 @@ function Sales() {
   const [salesHistory, setSalesHistory] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [search, setSearch] = useState('');
+  const [discountType, setDiscountType] = useState('fixed');
+  const [discountValue, setDiscountValue] = useState('');
+  const [customerMobile, setCustomerMobile] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -85,6 +89,11 @@ function Sales() {
   
   const cartTotal = cart.reduce((sum, item) => sum + (item.selling_price * item.quantity), 0);
 
+  const discountAmount = discountType === 'percentage'
+    ? (cartTotal * (parseFloat(discountValue) || 0)) / 100
+    : parseFloat(discountValue) || 0;
+  
+  const finalTotal = Math.max(0, cartTotal - discountAmount);
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -94,12 +103,20 @@ function Sales() {
 
     try {
       const items = cart.map((item) => ({ product_id: item.product_id, quantity: item.quantity }));
-      const res = await api.post('/sales', { items });
-      setInvoiceModal({
-        invoice_no: res.data.invoice_no,
-        total_amount: res.data.total_amount,
-        items: cart
-      });
+      const res = await api.post('/sales', {
+      items,
+      discount: discountAmount,
+      customer_mobile: customerMobile || null
+    });
+    setInvoiceModal({
+      invoice_no: res.data.invoice_no,
+      total_amount: res.data.total_amount,
+      discount: discountAmount,
+      customer_mobile: customerMobile || null,
+      items: cart
+    });
+    setDiscountValue('');
+    setCustomerMobile('');
       setCart([]);
       fetchProducts();
     } catch (err) {
@@ -133,8 +150,11 @@ function Sales() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'var(--card-bg)', borderRadius: '16px', padding: '2rem', minWidth: '380px', maxWidth: '500px', width: '90%' }}>
             <h2 style={{ textAlign: 'center', marginBottom: '0.3rem' }}>✅ Sale Complete</h2>
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>{invoiceModal.invoice_no}</p>
-            <div className="table-wrap">
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{invoiceModal.invoice_no}</p>
+            {invoiceModal.customer_mobile && (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem' }}>📱 {invoiceModal.customer_mobile}</p>
+            )}
+          <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
@@ -156,7 +176,13 @@ function Sales() {
                 </tbody>
               </table>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.2rem', fontWeight: 700, fontSize: '1.1rem' }}>
+            {invoiceModal.discount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.8rem', color: 'var(--danger)' }}>
+                <span>Discount</span>
+                <span>-${invoiceModal.discount.toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.8rem', fontWeight: 700, fontSize: '1.1rem' }}>
               <span>Total</span>
               <span style={{ color: 'var(--success)' }}>${invoiceModal.total_amount}</span>
             </div>
@@ -247,12 +273,19 @@ function Sales() {
       ) : (
       <div className="pos-layout">
         <div>
-          <h3 style={{ marginBottom: '1rem' }}>Products</h3>
+        <h3 style={{ marginBottom: '1rem' }}>Products</h3>
+          <input
+            type="text"
+            placeholder="🔍 Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+          />
           {loading ? (
             <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.9rem' }}>
-              {products.map((p) => (
+              {products.filter(p => p.product_name.toLowerCase().includes(search.toLowerCase())).map((p) => (
                 <div
                 key={p.id}
                 onClick={() => p.stock_quantity > 0 && addToCart(p)}
@@ -295,9 +328,42 @@ function Sales() {
                 </div>
               ))}
 
+              <input
+                type="text"
+                placeholder="Customer Mobile (optional)"
+                value={customerMobile}
+                onChange={(e) => setCustomerMobile(e.target.value)}
+                style={{ width: '100%', marginBottom: '0.6rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+              />
+
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem' }}>
+                <select
+                  value={discountType}
+                  onChange={(e) => setDiscountType(e.target.value)}
+                  style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+                >
+                  <option value="fixed">$ Fixed</option>
+                  <option value="percentage">% Percent</option>
+                </select>
+                <input
+                  type="number"
+                  placeholder="Discount"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                  style={{ flex: 1, padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+                />
+              </div>
+
+              {discountAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', color: 'var(--danger)' }}>
+                  <span>Discount</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '1.2rem 0' }}>
                 <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Total</span>
-                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary-dark)' }}>${cartTotal.toFixed(2)}</span>
+                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary-dark)' }}>${finalTotal.toFixed(2)}</span>
               </div>
 
               <button onClick={handleCheckout} disabled={submitting} className="btn btn-success" style={{ width: '100%', padding: '0.9rem', fontSize: '1rem' }}>
