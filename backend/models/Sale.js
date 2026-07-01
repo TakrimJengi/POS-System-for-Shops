@@ -16,11 +16,20 @@ const Sale = sequelize.define('Sale', {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
   },
+  discount: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0
+  },
+  customer_mobile: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   sale_date: {
     type: DataTypes.DATEONLY,
     allowNull: false
   }
-}, {
+  },
+  {
   timestamps: true
 });
 

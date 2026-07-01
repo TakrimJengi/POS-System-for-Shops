@@ -17,13 +17,13 @@ const generateInvoiceNo = () => {
 exports.createSale = async (req, res) => {
     const transaction = await sequelize.transaction();
     try {
-      const { items } = req.body;
-  
-      // Validate items array
-      if (!items || !Array.isArray(items) || items.length === 0) {
-        await transaction.rollback();
-        return res.status(400).json({ message: 'Cart items are required' });
-      }
+      const { items, discount = 0, customer_mobile = null } = req.body;
+
+    // Validate items array
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Cart items are required' });
+    }
   
       let total_amount = 0;
       const saleDetails = [];
@@ -70,11 +70,16 @@ exports.createSale = async (req, res) => {
   
       // Create sale
       const invoice_no = generateInvoiceNo();
-      const sale = await Sale.create({
-        invoice_no,
-        total_amount,
-        sale_date: new Date()
-      }, { transaction });
+    const discountAmount = parseFloat(discount) || 0;
+    const finalTotal = Math.max(0, total_amount - discountAmount);
+
+    const sale = await Sale.create({
+      invoice_no,
+      total_amount: finalTotal,
+      discount: discountAmount,
+      customer_mobile,
+      sale_date: new Date()
+    }, { transaction });
 
       // Create sale details
       for (const detail of saleDetails) {
@@ -91,6 +96,8 @@ exports.createSale = async (req, res) => {
         message: 'Sale created successfully',
         invoice_no: sale.invoice_no,
         total_amount: sale.total_amount,
+        discount: sale.discount,
+        customer_mobile: sale.customer_mobile,
         items_sold: saleDetails.length
       });
   
