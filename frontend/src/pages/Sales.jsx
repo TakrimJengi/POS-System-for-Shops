@@ -20,6 +20,10 @@ function Sales() {
   const [discountType, setDiscountType] = useState('fixed');
   const [discountValue, setDiscountValue] = useState('');
   const [customerMobile, setCustomerMobile] = useState('');
+  const [productPage, setProductPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
+  const PRODUCTS_PER_PAGE = 6;
+  const HISTORY_PER_PAGE = 10;
 
   useEffect(() => {
     fetchProducts();
@@ -77,7 +81,7 @@ function Sales() {
       setHistoryLoading(false);
     }
   };
-  
+
   const fetchInvoiceDetail = async (id) => {
     try {
       const res = await api.get(`/sales/${id}`);
@@ -86,14 +90,29 @@ function Sales() {
       setError('Failed to load invoice');
     }
   };
-  
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.selling_price * item.quantity), 0);
 
   const discountAmount = discountType === 'percentage'
     ? (cartTotal * (parseFloat(discountValue) || 0)) / 100
     : parseFloat(discountValue) || 0;
-  
+
   const finalTotal = Math.max(0, cartTotal - discountAmount);
+
+  const filteredProducts = products.filter(p =>
+    p.product_name.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalProductPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (productPage - 1) * PRODUCTS_PER_PAGE,
+    productPage * PRODUCTS_PER_PAGE
+  );
+
+  const totalHistoryPages = Math.ceil(salesHistory.length / HISTORY_PER_PAGE);
+  const paginatedHistory = salesHistory.slice(
+    (historyPage - 1) * HISTORY_PER_PAGE,
+    historyPage * HISTORY_PER_PAGE
+  );
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -104,19 +123,19 @@ function Sales() {
     try {
       const items = cart.map((item) => ({ product_id: item.product_id, quantity: item.quantity }));
       const res = await api.post('/sales', {
-      items,
-      discount: discountAmount,
-      customer_mobile: customerMobile || null
-    });
-    setInvoiceModal({
-      invoice_no: res.data.invoice_no,
-      total_amount: res.data.total_amount,
-      discount: discountAmount,
-      customer_mobile: customerMobile || null,
-      items: cart
-    });
-    setDiscountValue('');
-    setCustomerMobile('');
+        items,
+        discount: discountAmount,
+        customer_mobile: customerMobile || null
+      });
+      setInvoiceModal({
+        invoice_no: res.data.invoice_no,
+        total_amount: res.data.total_amount,
+        discount: discountAmount,
+        customer_mobile: customerMobile || null,
+        items: cart
+      });
+      setDiscountValue('');
+      setCustomerMobile('');
       setCart([]);
       fetchProducts();
     } catch (err) {
@@ -154,7 +173,7 @@ function Sales() {
             {invoiceModal.customer_mobile && (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginBottom: '1rem', fontSize: '0.9rem' }}>📱 {invoiceModal.customer_mobile}</p>
             )}
-          <div className="table-wrap">
+            <div className="table-wrap">
               <table>
                 <thead>
                   <tr>
@@ -201,34 +220,43 @@ function Sales() {
           {historyLoading ? (
             <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
           ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Invoice No</th>
-                    <th>Date</th>
-                    <th>Total</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {salesHistory.map((sale) => (
-                    <tr key={sale.id}>
-                      <td><strong>{sale.invoice_no}</strong></td>
-                      <td>{sale.sale_date}</td>
-                      <td>${sale.total_amount}</td>
-                      <td>
-                        <button
-                          onClick={() => fetchInvoiceDetail(sale.id)}
-                          className="btn btn-primary btn-sm">
-                          View
-                        </button>
-                      </td>
+            <>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Invoice No</th>
+                      <th>Date</th>
+                      <th>Total</th>
+                      <th>Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paginatedHistory.map((sale) => (
+                      <tr key={sale.id}>
+                        <td><strong>{sale.invoice_no}</strong></td>
+                        <td>{sale.sale_date}</td>
+                        <td>${sale.total_amount}</td>
+                        <td>
+                          <button
+                            onClick={() => fetchInvoiceDetail(sale.id)}
+                            className="btn btn-primary btn-sm">
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {totalHistoryPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '1rem' }}>
+                  <button onClick={() => setHistoryPage(p => Math.max(1, p - 1))} disabled={historyPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
+                  <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{historyPage} / {totalHistoryPages}</span>
+                  <button onClick={() => setHistoryPage(p => Math.min(totalHistoryPages, p + 1))} disabled={historyPage === totalHistoryPages} className="btn btn-secondary btn-sm">Next →</button>
+                </div>
+              )}
+            </>
           )}
 
           {/* Selected Invoice Detail Modal */}
@@ -271,108 +299,115 @@ function Sales() {
           )}
         </div>
       ) : (
-      <div className="pos-layout">
-        <div>
-        <h3 style={{ marginBottom: '1rem' }}>Products</h3>
-          <input
-            type="text"
-            placeholder="🔍 Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-          />
-          {loading ? (
-            <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.9rem' }}>
-              {products.filter(p => p.product_name.toLowerCase().includes(search.toLowerCase())).map((p) => (
-                <div
-                key={p.id}
-                onClick={() => p.stock_quantity > 0 && addToCart(p)}
-                className={`product-tile ${p.stock_quantity <= 0 ? 'disabled' : ''}`}
-              >
-                {p.image_url ? (
-                  <img src={`http://localhost:5000${p.image_url}`} alt={p.product_name} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.5rem' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '80px', borderRadius: '8px', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: '0.5rem' }}>📦</div>
-                )}
-                <strong>{p.product_name}</strong>
-                  <p style={{ margin: '0.4rem 0', color: 'var(--primary-dark)', fontWeight: 700, fontSize: '1.1rem' }}>${p.selling_price}</p>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: p.stock_quantity > 0 ? 'var(--text-muted)' : 'var(--danger)' }}>
-                    Stock: {p.stock_quantity}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="cart-panel">
-          <h3 style={{ marginBottom: '1rem' }}>🧾 Cart</h3>
-          {cart.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Cart is empty. Click a product to add it.</p>
-          ) : (
-            <>
-              {cart.map((item) => (
-                <div key={item.product_id} className="cart-item">
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.92rem' }}>{item.product_name}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>${item.selling_price} each</div>
+        <div className="pos-layout">
+          <div>
+            <h3 style={{ marginBottom: '1rem' }}>Products</h3>
+            <input
+              type="text"
+              placeholder="🔍 Search products..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setProductPage(1); }}
+              style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+            />
+            {loading ? (
+              <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.9rem' }}>
+                {paginatedProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => p.stock_quantity > 0 && addToCart(p)}
+                    className={`product-tile ${p.stock_quantity <= 0 ? 'disabled' : ''}`}
+                  >
+                    {p.image_url ? (
+                      <img src={`http://localhost:5000${p.image_url}`} alt={p.product_name} style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px', marginBottom: '0.5rem' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '80px', borderRadius: '8px', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', marginBottom: '0.5rem' }}>📦</div>
+                    )}
+                    <strong>{p.product_name}</strong>
+                    <p style={{ margin: '0.4rem 0', color: 'var(--primary-dark)', fontWeight: 700, fontSize: '1.1rem' }}>${p.selling_price}</p>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: p.stock_quantity > 0 ? 'var(--text-muted)' : 'var(--danger)' }}>
+                      Stock: {p.stock_quantity}
+                    </p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)} className="qty-btn">−</button>
-                    <span style={{ minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)} className="qty-btn">+</button>
-                    <button onClick={() => removeFromCart(item.product_id)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: '0.3rem', fontSize: '1rem' }}>✕</button>
+                ))}
+              </div>
+            )}
+            {totalProductPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '1rem' }}>
+                <button onClick={() => setProductPage(p => Math.max(1, p - 1))} disabled={productPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
+                <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{productPage} / {totalProductPages}</span>
+                <button onClick={() => setProductPage(p => Math.min(totalProductPages, p + 1))} disabled={productPage === totalProductPages} className="btn btn-secondary btn-sm">Next →</button>
+              </div>
+            )}
+          </div>
+
+          <div className="cart-panel">
+            <h3 style={{ marginBottom: '1rem' }}>🧾 Cart</h3>
+            {cart.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Cart is empty. Click a product to add it.</p>
+            ) : (
+              <>
+                {cart.map((item) => (
+                  <div key={item.product_id} className="cart-item">
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.92rem' }}>{item.product_name}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>${item.selling_price} each</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)} className="qty-btn">−</button>
+                      <span style={{ minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)} className="qty-btn">+</button>
+                      <button onClick={() => removeFromCart(item.product_id)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', marginLeft: '0.3rem', fontSize: '1rem' }}>✕</button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              <input
-                type="text"
-                placeholder="Customer Mobile (optional)"
-                value={customerMobile}
-                onChange={(e) => setCustomerMobile(e.target.value)}
-                style={{ width: '100%', marginBottom: '0.6rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-              />
-
-              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem' }}>
-                <select
-                  value={discountType}
-                  onChange={(e) => setDiscountType(e.target.value)}
-                  style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-                >
-                  <option value="fixed">$ Fixed</option>
-                  <option value="percentage">% Percent</option>
-                </select>
                 <input
-                  type="number"
-                  placeholder="Discount"
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(e.target.value)}
-                  style={{ flex: 1, padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+                  type="text"
+                  placeholder="Customer Mobile (optional)"
+                  value={customerMobile}
+                  onChange={(e) => setCustomerMobile(e.target.value)}
+                  style={{ width: '100%', marginBottom: '0.6rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
                 />
-              </div>
 
-              {discountAmount > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', color: 'var(--danger)' }}>
-                  <span>Discount</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+                <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.6rem' }}>
+                  <select
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value)}
+                    style={{ padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+                  >
+                    <option value="fixed">$ Fixed</option>
+                    <option value="percentage">% Percent</option>
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Discount"
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    style={{ flex: 1, padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+                  />
                 </div>
-              )}
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '1.2rem 0' }}>
-                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Total</span>
-                <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary-dark)' }}>${finalTotal.toFixed(2)}</span>
-              </div>
+                {discountAmount > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', color: 'var(--danger)' }}>
+                    <span>Discount</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
 
-              <button onClick={handleCheckout} disabled={submitting} className="btn btn-success" style={{ width: '100%', padding: '0.9rem', fontSize: '1rem' }}>
-                {submitting ? 'Processing...' : 'Complete Sale'}
-              </button>
-            </>
-          )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '1.2rem 0' }}>
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Total</span>
+                  <span style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary-dark)' }}>${finalTotal.toFixed(2)}</span>
+                </div>
+
+                <button onClick={handleCheckout} disabled={submitting} className="btn btn-success" style={{ width: '100%', padding: '0.9rem', fontSize: '1rem' }}>
+                  {submitting ? 'Processing...' : 'Complete Sale'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
       )}
     </div>
   );
