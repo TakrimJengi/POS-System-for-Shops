@@ -9,7 +9,7 @@ const generateAccessToken = (user) => {
   return jwt.sign(
     { id: user.id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: '30s' }
   );
 };
 
@@ -17,7 +17,7 @@ const generateAccessToken = (user) => {
 const generateRefreshToken = (user) => {
   return jwt.sign(
     { id: user.id },
-    process.env.JWT_SECRET,
+    process.env.JWT_REFRESH_SECRET,
     { expiresIn: '7d' }
   );
 };
@@ -131,7 +131,7 @@ exports.refreshToken = async (req, res) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
     // Get user
     const user = await User.findByPk(decoded.id);

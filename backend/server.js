@@ -1,9 +1,11 @@
+const dotenv = require('dotenv');
+const result = dotenv.config();
+
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const sequelize = require('./config/db');
-
 
 // Import models
 const User = require('./models/User');
@@ -69,12 +71,12 @@ app.use('/api/accounting', accountingRoutes);
 app.use('/api/market-basket', marketBasketRoutes);
 
 // Sync database
-sequelize.sync({ alter: true })
+sequelize.authenticate()
   .then(() => {
-    console.log('All models synced to database!');
+    console.log('Database connection established!');
   })
   .catch((err) => {
-    console.error('Error syncing database:', err.message);
+    console.error('Database connection failed:', err.message);
   });
 
 const PORT = process.env.PORT || 5000;
