@@ -21,18 +21,38 @@ function Sales() {
   const [discountValue, setDiscountValue] = useState('');
   const [customerMobile, setCustomerMobile] = useState('');
   const [productPage, setProductPage] = useState(1);
+  const [productTotalPages, setProductTotalPages] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
-  const PRODUCTS_PER_PAGE = 6;
-  const HISTORY_PER_PAGE = 10;
+  const [historyTotalPages, setHistoryTotalPages] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchCategories = async () => {
     try {
-      const res = await api.get('/products');
-      setProducts(res.data);
+      const res = await api.get('/categories');
+      setCategories(res.data);
+    } catch (err) {
+      console.error('Failed to load categories');
+    }
+  };
+
+  const fetchProducts = async (page = 1, searchTerm = search, categoryId = selectedCategory) => {
+    try {
+      setLoading(true);
+      let url = `/products?page=${page}&limit=6&search=${encodeURIComponent(searchTerm)}`;
+      if (categoryId !== '' && categoryId !== null && categoryId !== undefined) {
+        url += `&category_id=${categoryId}`;
+      }
+      console.log('Fetching:', url);
+      const res = await api.get(url);
+      setProducts(res.data.products);
+      setProductPage(res.data.currentPage);
+      setProductTotalPages(res.data.totalPages);
     } catch (err) {
       setError('Failed to load products');
     } finally {
@@ -70,11 +90,13 @@ function Sales() {
     setCart(cart.filter((item) => item.product_id !== productId));
   };
 
-  const fetchSalesHistory = async () => {
+  const fetchSalesHistory = async (page = 1) => {
     try {
       setHistoryLoading(true);
-      const res = await api.get('/sales');
-      setSalesHistory(res.data);
+      const res = await api.get(`/sales?page=${page}&limit=10`);
+      setSalesHistory(res.data.sales);
+      setHistoryPage(res.data.currentPage);
+      setHistoryTotalPages(res.data.totalPages);
     } catch (err) {
       setError('Failed to load sales history');
     } finally {
@@ -99,20 +121,15 @@ function Sales() {
 
   const finalTotal = Math.max(0, cartTotal - discountAmount);
 
-  const filteredProducts = products.filter(p =>
-    p.product_name.toLowerCase().includes(search.toLowerCase())
-  );
-  const totalProductPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
-  const paginatedProducts = filteredProducts.slice(
-    (productPage - 1) * PRODUCTS_PER_PAGE,
-    productPage * PRODUCTS_PER_PAGE
-  );
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    fetchProducts(1, e.target.value, selectedCategory);
+  };
 
-  const totalHistoryPages = Math.ceil(salesHistory.length / HISTORY_PER_PAGE);
-  const paginatedHistory = salesHistory.slice(
-    (historyPage - 1) * HISTORY_PER_PAGE,
-    historyPage * HISTORY_PER_PAGE
-  );
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+    fetchProducts(1, search, e.target.value);
+  };
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -158,7 +175,7 @@ function Sales() {
           🛒 New Sale
         </button>
         <button
-          onClick={() => { setShowHistory(true); fetchSalesHistory(); }}
+           onClick={() => { setShowHistory(true); fetchSalesHistory(1); }}
           className={`btn btn-sm ${showHistory ? 'btn-primary' : 'btn-secondary'}`}>
           📋 Sales History
         </button>
@@ -232,7 +249,7 @@ function Sales() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedHistory.map((sale) => (
+                    {salesHistory.map((sale) => (
                       <tr key={sale.id}>
                         <td><strong>{sale.invoice_no}</strong></td>
                         <td>{sale.sale_date}</td>
@@ -249,11 +266,11 @@ function Sales() {
                   </tbody>
                 </table>
               </div>
-              {totalHistoryPages > 1 && (
+              {historyTotalPages > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '1rem' }}>
-                  <button onClick={() => setHistoryPage(p => Math.max(1, p - 1))} disabled={historyPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
-                  <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{historyPage} / {totalHistoryPages}</span>
-                  <button onClick={() => setHistoryPage(p => Math.min(totalHistoryPages, p + 1))} disabled={historyPage === totalHistoryPages} className="btn btn-secondary btn-sm">Next →</button>
+                  <button onClick={() => fetchSalesHistory(historyPage - 1)} disabled={historyPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
+                  <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{historyPage} / {historyTotalPages}</span>
+                  <button onClick={() => fetchSalesHistory(historyPage + 1)} disabled={historyPage === historyTotalPages} className="btn btn-secondary btn-sm">Next →</button>
                 </div>
               )}
             </>
@@ -301,19 +318,31 @@ function Sales() {
       ) : (
         <div className="pos-layout">
           <div>
-            <h3 style={{ marginBottom: '1rem' }}>Products</h3>
-            <input
-              type="text"
-              placeholder="🔍 Search products..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setProductPage(1); }}
-              style={{ width: '100%', marginBottom: '1rem', padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
-            />
+          <h3 style={{ marginBottom: '1rem' }}>Products</h3>
+            <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search products..."
+                value={search}
+                onChange={handleSearchChange}
+                style={{ flex: 2, padding: '0.5rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+              />
+              <select
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                ))}
+              </select>
+            </div>
             {loading ? (
               <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.9rem' }}>
-                {paginatedProducts.map((p) => (
+                {products.map((p) => (
                   <div
                     key={p.id}
                     onClick={() => p.stock_quantity > 0 && addToCart(p)}
@@ -333,13 +362,13 @@ function Sales() {
                 ))}
               </div>
             )}
-            {totalProductPages > 1 && (
+            {productTotalPages > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '1rem' }}>
-                <button onClick={() => setProductPage(p => Math.max(1, p - 1))} disabled={productPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
-                <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{productPage} / {totalProductPages}</span>
-                <button onClick={() => setProductPage(p => Math.min(totalProductPages, p + 1))} disabled={productPage === totalProductPages} className="btn btn-secondary btn-sm">Next →</button>
-              </div>
-            )}
+              <button onClick={() => fetchProducts(productPage - 1)} disabled={productPage === 1} className="btn btn-secondary btn-sm">← Prev</button>
+              <span style={{ padding: '0.4rem 0.8rem', color: 'var(--text-muted)' }}>{productPage} / {productTotalPages}</span>
+              <button onClick={() => fetchProducts(productPage + 1)} disabled={productPage === productTotalPages} className="btn btn-secondary btn-sm">Next →</button>
+            </div>
+          )}
           </div>
 
           <div className="cart-panel">

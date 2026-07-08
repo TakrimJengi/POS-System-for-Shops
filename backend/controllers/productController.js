@@ -7,18 +7,27 @@ const { Op } = require('sequelize');
 // GET ALL PRODUCTS
 exports.getAllProducts = async (req, res) => {
     try {
-        const { search } = req.query;
-        
-        const whereClause = search ? {
-          product_name: { [Op.like]: `%${search}%` }
-        } : {};
+        const { search, page = 1, limit = 8, category_id } = req.query;
+        const offset = (parseInt(page) - 1) * parseInt(limit);
+
+        const whereClause = {};
+          if (search) whereClause.product_name = { [Op.like]: `%${search}%` };
+          if (category_id) whereClause.category_id = parseInt(category_id);
+
     
-        const products = await Product.findAll({
+        const { count, rows } = await Product.findAndCountAll({
           where: whereClause,
-          include: [{ model: Category, attributes: ['category_name'] }]
+          include: [{ model: Category, attributes: ['category_name'] }],
+          limit: parseInt(limit),
+          offset: offset
         });
     
-        res.status(200).json(products);
+        res.status(200).json({
+          products: rows,
+          totalItems: count,
+          totalPages: Math.ceil(count / parseInt(limit)),
+          currentPage: parseInt(page)
+        });
       } catch (error) {
         res.status(500).json({ message: 'Failed to get products', error: error.message });
       }
