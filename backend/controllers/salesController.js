@@ -2,6 +2,7 @@ const Sale = require('../models/Sale');
 const SaleDetail = require('../models/SaleDetail');
 const Product = require('../models/Product');
 const sequelize = require('../config/db');
+const { Op } = require('sequelize');
 
 // Generate unique invoice number
 const generateInvoiceNo = () => {
@@ -108,28 +109,37 @@ exports.createSale = async (req, res) => {
   };
 
   // GET ALL SALES (Invoice History)
-  exports.getAllSales = async (req, res) => {
-    try {
-      const { page = 1, limit = 10 } = req.query;
-      const offset = (parseInt(page) - 1) * parseInt(limit);
+exports.getAllSales = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
 
-      const { count, rows } = await Sale.findAndCountAll({
-        order: [['sale_date', 'DESC']],
-        limit: parseInt(limit),
-        offset: offset
-      });
-
-      res.status(200).json({
-        sales: rows,
-        totalItems: count,
-        totalPages: Math.ceil(count / parseInt(limit)),
-        currentPage: parseInt(page)
-      });
-
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to get sales', error: error.message });
+    const where = {};
+    if (search.trim() !== '') {
+      where[Op.or] = [
+        { invoice_no: { [Op.like]: `%${search}%` } },
+        { customer_mobile: { [Op.like]: `%${search}%` } },
+      ];
     }
-  };
+
+    const { count, rows } = await Sale.findAndCountAll({
+      where,
+      order: [['sale_date', 'DESC']],
+      limit: parseInt(limit),
+      offset: offset
+    });
+
+    res.status(200).json({
+      sales: rows,
+      totalItems: count,
+      totalPages: Math.ceil(count / parseInt(limit)),
+      currentPage: parseInt(page)
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to get sales', error: error.message });
+  }
+};
 
   // GET SINGLE INVOICE (with full details)
 exports.getInvoice = async (req, res) => {
